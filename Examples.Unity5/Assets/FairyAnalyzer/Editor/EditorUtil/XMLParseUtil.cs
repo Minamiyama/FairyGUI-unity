@@ -6,10 +6,7 @@
 // // ================================================================
 
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Xml;
-using DG.Tweening.Plugins.Core.PathCore;
-using Path = System.IO.Path;
 
 namespace FairyAnalyzer
 {
@@ -83,10 +80,11 @@ namespace FairyAnalyzer
                 componentAdapter.Extention = string.Format("G{0}", extention.InnerText);
             }
 
+            // 解析组件
             XmlNode displayList = root.SelectSingleNode("displayList");
-
             if (null != displayList)
             {
+                int componentIndex = 0;
                 foreach (XmlElement element in displayList)
                 {
                     var    item = new ComponentItemAdapter();
@@ -97,11 +95,44 @@ namespace FairyAnalyzer
                     {
                         item.FieldName = nameAttribute.InnerText;
                     }
-
-                    componentAdapter.ItemsAdapters.Add(item);
+                    item.Id = element.Attributes["id"].InnerText;
+                    item.FieldIndex = componentIndex;
+                    componentAdapter.ComponnetItems.Add(item);
+                    componentIndex++;
                 }
             }
 
+            // 解析控制器
+            XmlNode controllerList = root.SelectSingleNode("controller");
+            if (null != controllerList)
+            {
+                int controllerIndex = 0;
+                foreach (XmlElement xmlElement in controllerList)
+                {
+                    var controllerItem = new ComponentItemAdapter();
+                    controllerItem.FieldName = xmlElement.Attributes["name"].InnerText;
+                    controllerItem.FieldType = "Controller";
+                    controllerItem.FieldIndex = controllerIndex;
+                    componentAdapter.ControllerItems.Add(controllerItem);
+                    controllerIndex++;
+                }
+            }
+            
+            // 解析动效
+            XmlNode transitionList = root.SelectSingleNode("transition");
+            if (null != transitionList)
+            {
+                int transitionIndex = 0;
+                foreach (XmlElement xmlElement in transitionList)
+                {
+                    var transitionItem = new ComponentItemAdapter();
+                    transitionItem.FieldName  = xmlElement.Attributes["name"].InnerText;
+                    transitionItem.FieldType  = "Transition";
+                    transitionItem.FieldIndex = transitionIndex;
+                    componentAdapter.TransitionItems.Add(transitionItem);
+                    transitionIndex++;
+                }
+            }
             return componentAdapter;
         }
     }

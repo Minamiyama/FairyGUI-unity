@@ -5,6 +5,7 @@
 // // Description: Fairy GUI 生成代码的主要工具类
 // // ================================================================
 
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -26,6 +27,16 @@ namespace FairyAnalyzer
         private FairyGenerateCodeModel model;
 
         /// <summary>
+        /// 搜索的关键字
+        /// </summary>
+        private string searchKeyword = "";
+
+        /// <summary>
+        /// 搜索结果队列
+        /// </summary>
+        private List<FairyGUIComponentInfo> searchResult = new List<FairyGUIComponentInfo>();
+
+        /// <summary>
         /// 重绘 Inspector
         /// </summary>
         public override void OnInspectorGUI()
@@ -38,7 +49,7 @@ namespace FairyAnalyzer
 
 
             AddToolBar(menuItemNames, RefreshPackageDir, GenerateCode); // 添加菜单选项
-            SearchField("");                                            // 搜索条
+            var newSearchKey = SearchField(searchKeyword);              // 搜索条
             if (true == string.IsNullOrEmpty(model.UIProjectRootPath))
             {
                 EditorGUILayout.HelpBox("请先选择UI工程根目录后，再执行导出\n这里填写FairyGUI工程的绝对路径 \n ps: D:\\XXX\\XXX\\FairyGUI-unity\\Examples.Unity5\\UIProject\\UIProject", MessageType.Error);
@@ -54,41 +65,72 @@ namespace FairyAnalyzer
                 }
             }
 
-
-            // 绘制包队列
-            for (int index = 0; index < model.PackageInfos.Count; index++)
+            // 绘制搜索结果
+            if (newSearchKey != searchKeyword)
             {
-                var package = model.PackageInfos[index];
-                if (null == package)
-                {
-                    continue;
-                }
+                FilterSearchResult(newSearchKey);
+            }
 
-                ContentBlock.DrawContent(package.PackageName, () =>
+            if (searchResult.Count > 0)
+            {
+                for (int index = 0; index < searchResult.Count; index++)
                 {
-                    using (new VerViewBlock("box"))
+                    var item = searchResult[index];
+                    if (null != item)
                     {
-                        foreach (var componentInfo in package.PackageInfos)
+                        EditorGUILayout.Space();
+                        using (new ColorBlock(true == item.IsGenerateCode ? Color.green : Color.white))
                         {
-                            using (new ColorBlock(true == componentInfo.IsGenerateCode ? Color.green : Color.white))
+                            using (new HorViewBlock())
                             {
-                                EditorGUILayout.Space();
-                                using (new HorViewBlock())
+                                item.IsGenerateCode =
+                                    EditorGUILayout.Toggle(string.Format("[{2}] \t {0}\t[{1}]", item.ComponentName, item.isFairyIsExport, item.PackageName), item.IsGenerateCode);
+                                if (GUILayout.Button("Generate code", EditorStyles.toolbarButton, GUILayout.ExpandWidth(false)))
                                 {
-                                    componentInfo.IsGenerateCode =
-                                        EditorGUILayout.Toggle(string.Format("{0}\t[{1}]", componentInfo.ComponentName, componentInfo.isFairyIsExport), componentInfo.IsGenerateCode);
-                                    if (GUILayout.Button("Generate code", EditorStyles.toolbarButton, GUILayout.ExpandWidth(false)))
-                                    {
-                                        var componentPath = string.Format("{0}/assets/{1}/{2}", model.UIProjectRootPath, componentInfo.PackageName, componentInfo.ComponentName);
-                                        UnityEngine.Debug.Log("component path = " + componentPath);
-                                        var componentItems = XMLParseUtil.GetComponnetsInfoByPath(componentPath);
-                                        UnityEngine.Debug.Log("component item = " + componentItems);
-                                    }
+                                    
                                 }
                             }
                         }
                     }
-                });
+                }
+            }
+            else
+            {
+                if (true == string.IsNullOrEmpty(newSearchKey))
+                {
+                    // 绘制包队列
+                    for (int index = 0; index < model.PackageInfos.Count; index++)
+                    {
+                        var package = model.PackageInfos[index];
+                        if (null == package)
+                        {
+                            continue;
+                        }
+
+                        ContentBlock.DrawContent(package.PackageName, () =>
+                        {
+                            using (new VerViewBlock("box"))
+                            {
+                                foreach (var componentInfo in package.PackageInfos)
+                                {
+                                    using (new ColorBlock(true == componentInfo.IsGenerateCode ? Color.green : Color.white))
+                                    {
+                                        EditorGUILayout.Space();
+                                        using (new HorViewBlock())
+                                        {
+                                            componentInfo.IsGenerateCode =
+                                                EditorGUILayout.Toggle(string.Format("{0}\t[{1}]", componentInfo.ComponentName, componentInfo.isFairyIsExport), componentInfo.IsGenerateCode);
+                                            if (GUILayout.Button("Generate code", EditorStyles.toolbarButton, GUILayout.ExpandWidth(false)))
+                                            {
+                                                
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
             }
         }
 
@@ -105,6 +147,26 @@ namespace FairyAnalyzer
 
             // 保存一下场景
             EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
+        }
+
+        /// <summary>
+        /// 搜索结果
+        /// </summary>
+        private void FilterSearchResult(string _key)
+        {
+            searchKeyword = _key;
+            searchResult.Clear();
+            for (int index = 0; index < model.PackageInfos.Count; index++)
+            {
+                var package = model.PackageInfos[index];
+                foreach (var componentInfo in package.PackageInfos)
+                {
+                    if (true == componentInfo.ComponentName.Contains(_key))
+                    {
+                        searchResult.Add(componentInfo);
+                    }
+                }
+            }
         }
 
 

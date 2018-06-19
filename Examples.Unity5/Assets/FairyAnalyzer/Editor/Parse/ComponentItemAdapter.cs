@@ -11,6 +11,11 @@ namespace FairyAnalyzer
     public class ComponentItemAdapter : IComponnetItem
     {
         /// <summary>
+        /// id
+        /// </summary>
+        public string Id { get; set; }
+        
+        /// <summary>
         /// 字段的索引
         /// </summary>
         public int FieldIndex { get; set; }
