@@ -36,9 +36,9 @@ namespace FairyAnalyzer
                 return;
             }
 
-            // 添加菜单选项
-            AddToolBar(menuItemNames, RefreshPackageDir, GenerateCode);
 
+            AddToolBar(menuItemNames, RefreshPackageDir, GenerateCode); // 添加菜单选项
+            SearchField("");                                            // 搜索条
             if (true == string.IsNullOrEmpty(model.UIProjectRootPath))
             {
                 EditorGUILayout.HelpBox("请先选择UI工程根目录后，再执行导出", MessageType.Error);
@@ -87,7 +87,7 @@ namespace FairyAnalyzer
                 });
             }
         }
-        
+
         /// <summary>
         /// 刷新文件夹
         /// </summary>
@@ -98,10 +98,11 @@ namespace FairyAnalyzer
             {
                 EditorUtility.SetDirty(model);
             }
+
             // 保存一下场景
             EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
         }
-        
+
 
         /// <summary>
         /// 生成代码部分

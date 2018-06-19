@@ -8,6 +8,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using UnityEditor;
 using UnityEngine;
@@ -58,31 +59,19 @@ namespace FairyAnalyzer
         }
 
         /// <summary>
-        /// 选择文件夹
+        /// 搜索条
         /// </summary>
+        /// <param name="value"></param>
+        /// <param name="options"></param>
         /// <returns></returns>
-        public string OpenSelectDirDialog()
+        public static string SearchField(string value, params GUILayoutOption[] options)
         {
-            
-//            OpenFileDialog.OpenFileName openFileName = new OpenFileDialog.OpenFileName();
-//            openFileName.structSize   = Marshal.SizeOf(openFileName);
-//            openFileName.filter       = "Excel文件(*.xlsx)\0*.xlsx";
-//            openFileName.file         = new string(new char[256]);
-//            openFileName.maxFile      = openFileName.file.Length;
-//            openFileName.fileTitle    = new string(new char[64]);
-//            openFileName.maxFileTitle = openFileName.fileTitle.Length;
-//            openFileName.initialDir   = Application.streamingAssetsPath.Replace('/', '\\'); //默认路径
-//            openFileName.title        = "窗口标题";
-//            openFileName.flags        = 0x00080000 | 0x00001000 | 0x00000800 | 0x00000008;
-//
-//            if (OpenFileDialog.LocalDialog.GetOpenFileName(openFileName))
-//            {
-//                Debug.Log(openFileName.file);
-//                Debug.Log(openFileName.fileTitle);
-//            }
-//
-//            return "";
-            return "";
+            MethodInfo info = typeof(EditorGUILayout).GetMethod("ToolbarSearchField", BindingFlags.NonPublic | BindingFlags.Static, null, new System.Type[] { typeof(string), typeof(GUILayoutOption[]) }, null);
+            if (info != null)
+            {
+                value = (string)info.Invoke(null, new object[] { value, options });
+            }
+            return value;
         }
     }
 }
