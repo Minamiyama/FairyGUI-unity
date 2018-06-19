@@ -41,7 +41,7 @@ namespace FairyAnalyzer
             SearchField("");                                            // 搜索条
             if (true == string.IsNullOrEmpty(model.UIProjectRootPath))
             {
-                EditorGUILayout.HelpBox("请先选择UI工程根目录后，再执行导出", MessageType.Error);
+                EditorGUILayout.HelpBox("请先选择UI工程根目录后，再执行导出\n这里填写FairyGUI工程的绝对路径 \n ps: D:\\XXX\\XXX\\FairyGUI-unity\\Examples.Unity5\\UIProject\\UIProject", MessageType.Error);
             }
 
             // 绘制根目录文件夹
