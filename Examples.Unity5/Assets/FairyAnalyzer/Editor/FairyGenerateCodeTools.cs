@@ -76,9 +76,13 @@ namespace FairyAnalyzer
                                 using (new HorViewBlock())
                                 {
                                     componentInfo.IsGenerateCode =
-                                        EditorGUILayout.Toggle(string.Format("{0}\t[{1}]", componentInfo.ComponnetName, componentInfo.isFairyIsExport), componentInfo.IsGenerateCode);
+                                        EditorGUILayout.Toggle(string.Format("{0}\t[{1}]", componentInfo.ComponentName, componentInfo.isFairyIsExport), componentInfo.IsGenerateCode);
                                     if (GUILayout.Button("Generate code", EditorStyles.toolbarButton, GUILayout.ExpandWidth(false)))
                                     {
+                                        var componentPath = string.Format("{0}/assets/{1}/{2}", model.UIProjectRootPath, componentInfo.PackageName, componentInfo.ComponentName);
+                                        UnityEngine.Debug.Log("component path = " + componentPath);
+                                        var componentItems = XMLParseUtil.GetComponnetsInfoByPath(componentPath);
+                                        UnityEngine.Debug.Log("component item = " + componentItems);
                                     }
                                 }
                             }

@@ -6,7 +6,10 @@
 // // ================================================================
 
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Xml;
+using DG.Tweening.Plugins.Core.PathCore;
+using Path = System.IO.Path;
 
 namespace FairyAnalyzer
 {
@@ -17,7 +20,7 @@ namespace FairyAnalyzer
         /// </summary>
         /// <param name="_packagePath"></param>
         /// <returns></returns>
-        public static List<FairyGUIComponentInfo> GetAllComponentByPackagePath(string _packagePath)
+        public static List<FairyGUIComponentInfo> GetAllComponentByPackagePath(string _packageName, string _packagePath)
         {
             if (true == string.IsNullOrEmpty(_packagePath))
             {
@@ -25,7 +28,7 @@ namespace FairyAnalyzer
             }
 
             List<FairyGUIComponentInfo> componentsList = new List<FairyGUIComponentInfo>();
-            XmlDocument  doc            = new XmlDocument ();
+            XmlDocument                 doc            = new XmlDocument ();
             doc.Load (_packagePath);
             XmlNode root          = doc.SelectSingleNode ("packageDescription");
             XmlNode resourcesNode = root.SelectSingleNode("resources");
@@ -39,7 +42,8 @@ namespace FairyAnalyzer
                         var componentAttribute = xmlElement.Attributes["name"];
                         if (null != componentAttribute)
                         {
-                            fairyComponentInfo.ComponnetName = componentAttribute.InnerText;
+                            fairyComponentInfo.ComponentName = componentAttribute.InnerText;
+                            fairyComponentInfo.PackageName   = _packageName;
                         }
 
                         var isExportedAttribute = xmlElement.Attributes["exported"];
@@ -47,11 +51,58 @@ namespace FairyAnalyzer
                         {
                             fairyComponentInfo.isFairyIsExport = isExportedAttribute.InnerText == "true";
                         }
+
                         componentsList.Add(fairyComponentInfo);
                     }
                 }
             }
+
             return componentsList;
+        }
+
+
+        /// <summary>
+        /// 根据解析component xml里面的具体内容
+        /// </summary>
+        /// <param name="_path"></param>
+        /// <returns></returns>
+        public static ComponentAdapter GetComponnetsInfoByPath(string _path)
+        {
+            if (true == string.IsNullOrEmpty(_path))
+            {
+                return null;
+            }
+
+            ComponentAdapter componentAdapter = new ComponentAdapter();
+            XmlDocument      doc              = new XmlDocument ();
+            doc.Load (_path);
+            XmlNode root      = doc.SelectSingleNode ("component");
+            var     extention = root.Attributes["extention"];
+            if (null != extention)
+            {
+                componentAdapter.Extention = string.Format("G{0}", extention.InnerText);
+            }
+
+            XmlNode displayList = root.SelectSingleNode("displayList");
+
+            if (null != displayList)
+            {
+                foreach (XmlElement element in displayList)
+                {
+                    var    item = new ComponentItemAdapter();
+                    string type = "G" + element.Name.Substring(0, 1).ToUpper() + element.Name.Substring(1);
+                    item.FieldType = type;
+                    var nameAttribute = element.Attributes["name"];
+                    if (null != nameAttribute)
+                    {
+                        item.FieldName = nameAttribute.InnerText;
+                    }
+
+                    componentAdapter.ItemsAdapters.Add(item);
+                }
+            }
+
+            return componentAdapter;
         }
     }
 }

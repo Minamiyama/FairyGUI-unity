@@ -59,9 +59,14 @@ namespace FairyAnalyzer
     public class FairyGUIComponentInfo
     {
         /// <summary>
+        /// 组件的相对路径
+        /// </summary>
+        public string PackageName;
+
+        /// <summary>
         /// 包名称
         /// </summary>
-        public string ComponnetName;
+        public string ComponentName;
 
         /// <summary>
         /// fairy中是否导出

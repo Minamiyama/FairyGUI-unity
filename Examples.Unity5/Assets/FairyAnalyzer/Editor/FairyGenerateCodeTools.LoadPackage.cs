@@ -20,7 +20,7 @@ namespace FairyAnalyzer
         {
             List<DirectoryInfo> allDirInfos = new List<DirectoryInfo>();
             if (false == string.IsNullOrEmpty(model.UIProjectRootPath))
-            {
+            {                
                 FileHelper.GetAllDirBySub(new DirectoryInfo(model.UIProjectRootPath + "/assets"), allDirInfos);
                 model.PackageInfos.Clear();
                 if (allDirInfos.Count > 0)
@@ -43,12 +43,12 @@ namespace FairyAnalyzer
                         model.PackageInfos.Add(packageInfo);
 
                         // 解析出包里面的所有组件
-                        var componentsList = XMLParseUtil.GetAllComponentByPackagePath(string.Format("{0}/package.xml", directoryInfo.FullName));
+                        var componentsList = XMLParseUtil.GetAllComponentByPackagePath(directoryInfo.Name, string.Format("{0}/package.xml", directoryInfo.FullName));
                         packageInfo.PackageInfos.Clear();
                         foreach (var componentItem in componentsList)
                         {
                             packageInfo.PackageInfos.Add(componentItem);
-                            UnityEngine.Debug.Log("添加了包 = " + componentItem.ComponnetName);
+                            UnityEngine.Debug.Log("添加了包 = " + componentItem.ComponentName);
                         }
                     }
 
