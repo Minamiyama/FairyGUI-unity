@@ -4,7 +4,7 @@
     {
         public static void Load(string packagePath)
         {
-            var asset = new FairyAsset(new[] { packagePath });
+            var asset = new FairyAsset(packagePath);
         }
     }
 }

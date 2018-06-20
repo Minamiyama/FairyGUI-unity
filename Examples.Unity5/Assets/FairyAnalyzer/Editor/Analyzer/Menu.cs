@@ -23,7 +23,7 @@ public class Menu
     [MenuItem("工具/解析")]
     public static void Parse()
     {
-        var packagePath = string.Format("{0}/../UIProject/UIProject/assets/Basics", Application.dataPath);
+        var packagePath = string.Format("{0}/../UIProject/UIProject", Application.dataPath);
         PackageLoader.Load(packagePath);
     }
 }
