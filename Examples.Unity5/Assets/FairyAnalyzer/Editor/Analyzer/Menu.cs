@@ -10,6 +10,6 @@ public class Menu
     public static void Parse()
     {
         var packagePath = string.Format("{0}/../UIProject/UIProject/assets/Basics", Application.dataPath);
-        var package = PackageDescription.Parse(packagePath);
+        PackageLoader.Load(packagePath);
     }
 }
