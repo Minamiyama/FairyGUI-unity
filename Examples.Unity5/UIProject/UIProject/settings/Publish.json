@@ -1,11 +1,11 @@
 {
 	"codeGeneration":{
-		"classNamePrefix":"",
-		"codePath":"",
+		"classNamePrefix":"UI_",
+		"codePath":"..\\Code",
 		"codeType":"",
 		"getMemberByName":false,
 		"ignoreNoname":true,
-		"memberNamePrefix":"",
+		"memberNamePrefix":"m_",
 		"packageName":""
 	},
 	"compressDesc":true,
