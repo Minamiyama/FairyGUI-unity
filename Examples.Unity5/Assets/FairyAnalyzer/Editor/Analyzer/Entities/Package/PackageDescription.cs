@@ -3,28 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Xml.Serialization;
 using FairyAnalyzer.Base;
-using FairyAnalyzer.Component;
 
 namespace FairyAnalyzer.Package
 {
-    public class PackageLoader
-    {
-        public static void Load(string packagePath)
-        {
-            var packageDescription = PackageDescription.Parse(packagePath);
-
-            var componentDescs = new List<ComponentDescription>();
-            foreach (var resource in packageDescription.Resources)
-            {
-                if (resource is Component)
-                {
-                    componentDescs.Add(ComponentDescription.Parse(string.Format("{0}{1}{2}", packagePath, resource.Path, resource.Name)));
-                }
-            }
-        }
-    }
-
-
     [XmlRoot("packageDescription")]
     public class PackageDescription : FairyIdBase
     {

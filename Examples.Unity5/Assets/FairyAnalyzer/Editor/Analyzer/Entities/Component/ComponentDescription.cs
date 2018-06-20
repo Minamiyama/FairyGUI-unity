@@ -8,15 +8,27 @@ namespace FairyAnalyzer.Component
     [XmlRoot("component")]
     public class ComponentDescription
     {
-        [XmlElement("Button", typeof(Button)),
-         XmlElement("ComboBox", typeof(ComboBox))]
-        public Component ComponentType { get; set; }
+        [XmlElement("Button", typeof(Button))]
+        [XmlElement("Slider", typeof(Slider))]
+        [XmlElement("ProgressBar", typeof(ProgressBar))]
+        [XmlElement("ScrollBar", typeof(ScrollBar))]
+        [XmlElement("ComboBox", typeof(ComboBox))]
+        [XmlElement("Label", typeof(Label))]
+        public ExtentionType ComponentType { get; set; }
 
         [XmlElement("controller")]
         public List<Controller> Controllers { get; set; }
 
+        [XmlArrayItem("component", typeof(CustomComponent))]
+        [XmlArrayItem("group", typeof(Group))]
+        [XmlArrayItem("graph", typeof(Graph))]
+        [XmlArrayItem("list", typeof(List))]
+        [XmlArrayItem("loader", typeof(Loader))]
+        [XmlArrayItem("image", typeof(Image))]
+        [XmlArrayItem("richtext", typeof(RichText))]
+        [XmlArrayItem("text", typeof(Text))]
         [XmlArray(ElementName = "displayList")]
-        public List<Component> DisplayList { get; set; }
+        public List<ComponentType> DisplayList { get; set; }
 
         public static ComponentDescription Parse(string xmlPath)
         {
