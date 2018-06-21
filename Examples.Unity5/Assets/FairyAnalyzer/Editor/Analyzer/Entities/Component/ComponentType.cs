@@ -24,6 +24,12 @@ namespace FairyAnalyzer.Component
     {
         [XmlAttribute("src")]
         public string Src { get; set; }
+
+        /// <summary>
+        /// 引用包源
+        /// </summary>
+        [XmlAttribute("pkg")]
+        public string Pkg { get; set; }
     }
 
     [Serializable]

@@ -16,6 +16,9 @@ namespace FairyAnalyzer.Component
         [XmlElement("Label", typeof(Label))]
         public ExtentionType ComponentType { get; set; }
 
+        [XmlAttribute("extention")]
+        public string Extention { get; set; }
+
         [XmlElement("controller")]
         public List<Controller> Controllers { get; set; }
 
@@ -27,7 +30,7 @@ namespace FairyAnalyzer.Component
         [XmlArrayItem("image", typeof(Image))]
         [XmlArrayItem("richtext", typeof(RichText))]
         [XmlArrayItem("text", typeof(Text))]
-        [XmlArray(ElementName = "displayList")]
+        [XmlArray("displayList")]
         public List<ComponentType> DisplayList { get; set; }
 
         public static ComponentDescription Parse(string xmlPath)

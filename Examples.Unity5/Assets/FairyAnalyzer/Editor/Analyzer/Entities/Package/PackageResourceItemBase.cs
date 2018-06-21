@@ -10,7 +10,7 @@ namespace FairyAnalyzer.Package
     [XmlInclude(typeof(Component))]
     [XmlInclude(typeof(Image))]
     [Serializable]
-    public class PackageResourceItemBase : FairyNameBase
+    public abstract class PackageResourceItemBase : FairyNameBase
     {
         [FairyProperty]
         [XmlAttribute("path")]
