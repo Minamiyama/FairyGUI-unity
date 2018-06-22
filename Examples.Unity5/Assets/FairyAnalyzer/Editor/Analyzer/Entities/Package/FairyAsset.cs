@@ -165,6 +165,31 @@ namespace FairyAnalyzer.Package
                     var createInstance = string.Format("{3,12}return ({0})UIPackage.CreateObject(\"{1}\", \"{2}\");", className, fairyPackageName, fairyComponentName, " ");
 
                     var variable = new StringBuilder();
+                    var content = new StringBuilder();
+
+                    for (var i = 0; i < comp.ComponentDescription.Controllers.Count; i++)
+                    {
+                        var con = comp.ComponentDescription.Controllers[i];
+                        variable.AppendLine(string.Format("{2,8}public Controller {0}{1};",
+                            Publish.codeGeneration.memberNamePrefix, con.Name, ""));
+                        for (var j = 0; j < con.Pages.Count; j++)
+                        {
+                            var stateName = con.Pages[j];
+                            if (string.IsNullOrEmpty(stateName))
+                            {
+                                stateName = string.Format("{0}", j);
+                            }
+
+                            variable.AppendLine(string.Format("{4,8}public const int {0}{1}_{2} = {3};", Publish.codeGeneration.memberNamePrefix, con.Name, stateName, j, ""));
+                        }
+
+                        variable.AppendLine("");
+
+                        content.AppendLine(string.Format("{3,12}{0}{1} = this.GetControllerAt({2});", Publish.codeGeneration.memberNamePrefix, con.Name, i, ""));
+                    }
+
+
+                    var compIndex = 0;
                     for (var i = 0; i < comp.ComponentDescription.DisplayList.Count; i++)
                     {
                         var dispComp = comp.ComponentDescription.DisplayList[i];
@@ -180,6 +205,19 @@ namespace FairyAnalyzer.Package
                             }
 
                             compType = GetClassName(Components[pkgId][c.Src]);
+                        }
+                        else if (dispComp is Text)
+                        {
+                            compType = "GTextField";
+                            var t = (Text)dispComp;
+                            if (t.Input)
+                            {
+                                compType = "GTextInput";
+                            }
+                        }
+                        else if (dispComp is RichText)
+                        {
+                            compType = "GRichTextField";
                         }
                         else if (dispComp is Group)
                         {
@@ -198,10 +236,20 @@ namespace FairyAnalyzer.Package
                         {
                             if (Publish.codeGeneration.ignoreNoname)
                             {
+                                compIndex++;
                                 continue;
                             }
                         }
-                        variable.AppendLine(string.Format("{3,8}public {0} {1}{2}", compType, Publish.codeGeneration.memberNamePrefix, dispComp.Name, " "));
+                        variable.AppendLine(string.Format("{3,8}public {0} {1}{2};", compType, Publish.codeGeneration.memberNamePrefix, dispComp.Name, " "));
+                        content.AppendLine(string.Format("{4,12}{0}{1} = ({2})this.GetChildAt({3});",
+                            Publish.codeGeneration.memberNamePrefix, dispComp.Name, compType, compIndex++, " "));
+                    }
+
+                    for (var i = 0; i < comp.ComponentDescription.Transitions.Count; i++)
+                    {
+                        var tran = comp.ComponentDescription.Transitions[i];
+                        variable.AppendLine(string.Format("{2,8}public Transition {0}{1};", Publish.codeGeneration.memberNamePrefix, tran.Name, ""));
+                        content.AppendLine(string.Format("{3,12}{0}{1} = this.GetTransitionAt({2});", Publish.codeGeneration.memberNamePrefix, tran.Name, i, ""));
                     }
 
                     str = str.Replace("{packageName}", packageName);
@@ -210,6 +258,7 @@ namespace FairyAnalyzer.Package
                     str = str.Replace("{uiPath}", uiPath);
                     str = str.Replace("{createInstance}", createInstance);
                     str = str.Replace("{variable}", variable.ToString());
+                    str = str.Replace("{content}", content.ToString());
 
                     File.WriteAllText(filePath, str);
                 }

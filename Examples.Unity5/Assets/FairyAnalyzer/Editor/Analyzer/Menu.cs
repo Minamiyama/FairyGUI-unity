@@ -24,7 +24,7 @@ public class Menu
     public static void Parse()
     {
         var packagePath = string.Format("{0}/../UIProject/UIProject", Application.dataPath);
-        var outputPath = string.Format("{0}/../Outputs", packagePath);
+        var outputPath = string.Format("{0}/../Output", packagePath);
         PackageLoader.Load(packagePath, outputPath);
     }
 }

@@ -22,6 +22,9 @@ namespace FairyAnalyzer.Component
         [XmlElement("controller")]
         public List<Controller> Controllers { get; set; }
 
+        [XmlElement("transition")]
+        public List<Transition> Transitions { get; set; }
+
         [XmlArrayItem("component", typeof(CustomComponent))]
         [XmlArrayItem("group", typeof(Group))]
         [XmlArrayItem("graph", typeof(Graph))]
