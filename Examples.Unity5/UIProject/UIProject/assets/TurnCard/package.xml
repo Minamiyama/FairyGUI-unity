@@ -7,5 +7,5 @@
     <component id="c5s83" name="CardComponent.xml" path="/"/>
     <image id="c5s84" name="card_a.png" path="/"/>
   </resources>
-  <publish name="TurnCard"/>
+  <publish name="TurnCard" genCode="true"/>
 </packageDescription>
