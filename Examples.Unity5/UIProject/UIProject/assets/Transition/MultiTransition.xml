@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="400,400">
+  <controller name="c1" pages="0,状态0,1,State1,2,Indes2,3,SayHi,4,,5," selected="0">
+    <remark page="0" value="ppp"/>
+    <remark page="1" value="ppppp"/>
+    <remark page="2" value="pp"/>
+    <remark page="3" value="p"/>
+  </controller>
+  <controller name="c2" pages="0,,1,,2,,3,,4,,5," selected="0"/>
+  <controller name="c3" pages="" selected="-1"/>
+  <displayList>
+    <text id="n0_gufp" name="n__0__" xy="72,62" size="40,16" fontSize="12" text=""/>
+    <graph id="n1_gufp" name="nPP1ppo" xy="61,121" size="100,100" type="rect"/>
+    <list id="n2_gufp" name="xx2" xy="47,259" size="200,300" overflow="scroll"/>
+    <loader id="n3_gufp" name="oo3" xy="295,115" size="50,50"/>
+  </displayList>
+  <transition name="t0"/>
+  <transition name="t1"/>
+  <transition name="t2"/>
+  <transition name="t3"/>
+  <transition name="t4"/>
+  <transition name="t5"/>
+  <transition name="t6"/>
+</component>

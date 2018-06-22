@@ -224,7 +224,7 @@
     <component id="srct87" name="Slider2.xml" path="/components/"/>
     <movieclip id="iwqq89" name="gz.jta" path="/images/"/>
   </resources>
-  <publish name="Basics" packageCount="1">
+  <publish name="Basics" packageCount="1" genCode="true">
     <atlas name="Default" index="0"/>
   </publish>
 </packageDescription>

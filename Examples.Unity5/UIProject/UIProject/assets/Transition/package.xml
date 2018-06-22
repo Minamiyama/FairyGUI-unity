@@ -53,8 +53,9 @@
     <image id="fou91e" name="h7.png" path="/"/>
     <image id="fou91f" name="h8.png" path="/"/>
     <image id="fou91g" name="h9.png" path="/"/>
+    <component id="ow7f1h" name="MultiTransition.xml" path="/" exported="true"/>
   </resources>
-  <publish name="Transition">
+  <publish name="Transition" genCode="true">
     <atlas name="Default" index="0"/>
   </publish>
 </packageDescription>
