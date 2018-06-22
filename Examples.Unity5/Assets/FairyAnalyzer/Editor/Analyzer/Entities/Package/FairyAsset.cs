@@ -198,13 +198,24 @@ namespace FairyAnalyzer.Package
                         if (dispComp is CustomComponent)
                         {
                             var c = (CustomComponent)dispComp;
+                            string refPkgName = string.Empty;
                             var pkgId = c.Pkg;
                             if (string.IsNullOrEmpty(pkgId))
                             {
                                 pkgId = pkgKey;
                             }
+                            else //跨包引用加包名
+                            {
+                                refPkgName = Packages[pkgId].PackageDescription.Publish.Name;
+                                if (string.IsNullOrEmpty(Publish.codeGeneration.packageName) == false)
+                                {
+                                    refPkgName = string.Format("{0}.{1}", Publish.codeGeneration.packageName,
+                                        refPkgName);
+                                }
 
-                            compType = GetClassName(Components[pkgId][c.Src]);
+                                refPkgName = string.Format("{0}.", refPkgName);
+                            }
+                            compType = string.Format("{0}{1}", refPkgName, GetClassName(Components[pkgId][c.Src]));
                         }
                         else if (dispComp is Text)
                         {
