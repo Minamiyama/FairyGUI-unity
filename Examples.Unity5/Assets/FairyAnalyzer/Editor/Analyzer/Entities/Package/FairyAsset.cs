@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using FairyAnalyzer.Component;
+using UnityEditor;
 using UnityEngine;
-using UnityScript.Steps;
 
 namespace FairyAnalyzer.Package
 {
@@ -127,9 +128,16 @@ namespace FairyAnalyzer.Package
             //开始处理输出
             var classTemplate = Resources.Load<TextAsset>("Component.template");
             Debug.Log(classTemplate.text);
-            foreach (var pkgKey in dealed.Keys)
+            var pkgKeys = dealed.Keys.ToList();
+            var pkgStep = 1f / pkgKeys.Count;
+
+            for (var k = 0; k < pkgKeys.Count; k++)
             {
+                var pkgKey = pkgKeys[k];
+
                 var package = Packages[pkgKey];
+                EditorUtility.DisplayProgressBar("导出...", package.PackageDescription.Publish.Name, k * pkgStep);
+
                 var packageName = package.PackageDescription.Publish.Name;
                 var fairyPackageName = packageName;
                 if (string.IsNullOrEmpty(Publish.codeGeneration.packageName) == false)
@@ -144,11 +152,17 @@ namespace FairyAnalyzer.Package
                 }
                 Directory.CreateDirectory(pkgOutputPath);
 
-                foreach (var compKey in dealed[pkgKey].Keys)
+                var compKeys = dealed[pkgKey].Keys.ToList();
+                for (var cIndex = 0; cIndex < compKeys.Count; cIndex++)
                 {
+                    var compKey = compKeys[cIndex];
                     var comp = dealed[pkgKey][compKey];
-
                     var fairyComponentName = comp.ResoureInfo.Name.Replace(".xml", "");
+
+                    EditorUtility.DisplayProgressBar("导出...",
+                        string.Format("{0}/{1}", package.PackageDescription.Publish.Name, fairyComponentName), (k * pkgStep) + (cIndex * 1f / compKeys.Count) * pkgStep);
+
+
                     string className = GetClassName(comp);
 
                     var filePath = string.Format("{0}/{1}.cs", pkgOutputPath, className);
@@ -167,11 +181,45 @@ namespace FairyAnalyzer.Package
                     var variable = new StringBuilder();
                     var content = new StringBuilder();
 
+                    #region Controller处理
+                    var controllerTemplate = Resources.Load<TextAsset>("Controller.template").text;
+                    var controllerTemplateParts = controllerTemplate.Split(new[] { "-----" }, StringSplitOptions.None);
+
+                    var controllerTemplateHeader = controllerTemplateParts[0];
+
+                    controllerTemplateHeader = controllerTemplateHeader.Replace("{packageName}", packageName);
+                    controllerTemplateHeader = controllerTemplateHeader.Replace("{className}", className);
+
+                    var controllerTemplateFooter = controllerTemplateParts[2];
+                    var controllerTemplateBody = new StringBuilder();
+
                     for (var i = 0; i < comp.ComponentDescription.Controllers.Count; i++)
                     {
+                        var controllerDef = controllerTemplateParts[1];
                         var con = comp.ComponentDescription.Controllers[i];
-                        variable.AppendLine(string.Format("{2,8}public Controller {0}{1};",
-                            Publish.codeGeneration.memberNamePrefix, con.Name, ""));
+
+                        var memberName = string.Format("{0}{1}", Publish.codeGeneration.memberNamePrefix, con.Name);
+
+                        var controllerIndexMember = new StringBuilder();
+                        for (var j = 0; j < con.Pages.Count; j++)
+                        {
+                            var stateName = con.Pages[j];
+                            if (string.IsNullOrEmpty(stateName))
+                            {
+                                stateName = string.Format("_{0}", j);
+                            }
+
+                            controllerIndexMember.AppendLine(string.Format("{3,16}{0}{1} = {2},", memberName, stateName, j, ""));
+                        }
+
+
+                        controllerDef = controllerDef.Replace("{controllerName}", con.Name);
+                        controllerDef = controllerDef.Replace("{controllerIndexMember}", controllerIndexMember.ToString());
+                        controllerTemplateBody.AppendLine(controllerDef);
+
+
+                        variable.AppendLine(string.Format("{2,8}public {0}Controller {1};", con.Name, memberName, ""));
+
                         for (var j = 0; j < con.Pages.Count; j++)
                         {
                             var stateName = con.Pages[j];
@@ -180,13 +228,21 @@ namespace FairyAnalyzer.Package
                                 stateName = string.Format("{0}", j);
                             }
 
-                            variable.AppendLine(string.Format("{4,8}public const int {0}{1}_{2} = {3};", Publish.codeGeneration.memberNamePrefix, con.Name, stateName, j, ""));
+                            variable.AppendLine(string.Format("{3,8}public const int {0}_{1} = {2};", memberName, stateName, j, ""));
                         }
 
                         variable.AppendLine("");
 
-                        content.AppendLine(string.Format("{3,12}{0}{1} = this.GetControllerAt({2});", Publish.codeGeneration.memberNamePrefix, con.Name, i, ""));
+                        content.AppendLine(string.Format("{3,12}{0} = ({1}Controller)this.GetControllerAt({2});", memberName, con.Name, i, ""));
                     }
+
+                    var controllerBody = controllerTemplateBody.ToString();
+                    if (string.IsNullOrEmpty(controllerBody) == false)
+                    {
+                        controllerBody = string.Format("{0}{1}{2}", controllerTemplateHeader, controllerBody, controllerTemplateFooter);
+                        File.WriteAllText(filePath.Replace(".cs", "Controller.cs"), controllerBody);
+                    }
+                    #endregion
 
 
                     var compIndex = 0;
@@ -274,6 +330,7 @@ namespace FairyAnalyzer.Package
                     File.WriteAllText(filePath, str);
                 }
             }
+            EditorUtility.ClearProgressBar();
         }
 
         private string GetClassName(FairyComponent comp)
