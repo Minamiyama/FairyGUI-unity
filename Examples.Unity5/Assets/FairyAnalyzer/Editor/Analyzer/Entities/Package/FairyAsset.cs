@@ -130,6 +130,14 @@ namespace FairyAnalyzer.Package
                         {
                             outputList.Add(GetComponentFromUiUri(listComp.DefaultItem));
                         }
+
+                        foreach (var listCompItem in listComp.items)
+                        {
+                            if (string.IsNullOrEmpty(listCompItem.Url) == false)
+                            {
+                                outputList.Add(GetComponentFromUiUri(listCompItem.Url));
+                            }
+                        }
                     }
                 }
 

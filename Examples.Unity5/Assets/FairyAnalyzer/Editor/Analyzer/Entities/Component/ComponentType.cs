@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Xml.Serialization;
+using System.Collections.Generic;
 using FairyAnalyzer.Base;
 
 namespace FairyAnalyzer.Component
@@ -52,6 +53,16 @@ namespace FairyAnalyzer.Component
     [Serializable]
     public class List : ComponentType
     {
+        [Serializable]
+        public class ListItem
+        {
+            [XmlAttribute("url")]
+            public string Url { get; set; }
+        }
+
+        [XmlElement("item", typeof(ListItem))]
+        public List<ListItem> items { get; set; }
+
         [XmlAttribute("defaultItem")]
         public string DefaultItem { get; set; }
     }
