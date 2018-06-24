@@ -26,6 +26,7 @@ namespace FairyAnalyzer.Component
         public List<Transition> Transitions { get; set; }
 
         [XmlArrayItem("component", typeof(CustomComponent))]
+        [XmlArrayItem("movieclip", typeof(MovieClip))]
         [XmlArrayItem("group", typeof(Group))]
         [XmlArrayItem("graph", typeof(Graph))]
         [XmlArrayItem("list", typeof(List))]

@@ -8,7 +8,7 @@ namespace FairyAnalyzer.Package
     public class Publish
     {
         /// <summary>
-        /// 发布文件名
+        /// 文件名
         /// </summary>
         [XmlAttribute("name")]
         public string Name { get; set; }

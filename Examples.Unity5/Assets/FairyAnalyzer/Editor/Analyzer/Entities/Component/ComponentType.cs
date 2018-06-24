@@ -6,6 +6,7 @@ using FairyAnalyzer.Base;
 namespace FairyAnalyzer.Component
 {
     [XmlInclude(typeof(CustomComponent))]
+    [XmlInclude(typeof(MovieClip))]
     [XmlInclude(typeof(Group))]
     [XmlInclude(typeof(Graph))]
     [XmlInclude(typeof(List))]
@@ -49,7 +50,11 @@ namespace FairyAnalyzer.Component
     public class Loader : ComponentType { }
 
     [Serializable]
-    public class List : ComponentType { }
+    public class List : ComponentType
+    {
+        [XmlAttribute("defaultItem")]
+        public string DefaultItem { get; set; }
+    }
 
     [Serializable]
     public class Graph : ComponentType { }
@@ -60,5 +65,8 @@ namespace FairyAnalyzer.Component
         [XmlAttribute("advanced")]
         public bool Advanced { get; set; }
     }
+
+    [Serializable]
+    public class MovieClip : ComponentType { }
 
 }

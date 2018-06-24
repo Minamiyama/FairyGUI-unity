@@ -73,7 +73,7 @@ namespace FairyAnalyzer.Package
             var dealed = new Dictionary<string, Dictionary<string, FairyComponent>>();
             foreach (var pkgKey in Components.Keys)
             {
-                Debug.Log(string.Format("[Package]********************************{0}", Packages[pkgKey].PackageDescription.Publish.Name));
+                Debug.Log(string.Format("[Package]********************************{0}", Packages[pkgKey].FolderName));
                 foreach (var compKey in Components[pkgKey].Keys)
                 {
                     var comp = Components[pkgKey][compKey];
@@ -85,6 +85,7 @@ namespace FairyAnalyzer.Package
                 }
             }
 
+            //TODO 可以融合进下一步
             for (var currentIndex = 0; currentIndex < outputList.Count; currentIndex++)
             {
                 var currComp = outputList[currentIndex];
@@ -102,9 +103,9 @@ namespace FairyAnalyzer.Package
 
                 foreach (var componentType in currComp.ComponentDescription.DisplayList)
                 {
-                    var customComponent = componentType as CustomComponent;
-                    if (customComponent != null)
+                    if (componentType is CustomComponent)
                     {
+                        var customComponent = (CustomComponent)componentType;
                         if (IsDefaultName(customComponent.Name))
                         {
                             if (Publish.codeGeneration.ignoreNoname)
@@ -122,11 +123,20 @@ namespace FairyAnalyzer.Package
 
                         outputList.Add(Components[pkgId][customComponent.Src]);
                     }
+                    else if (componentType is List)
+                    {
+                        var listComp = (List)componentType;
+                        if (string.IsNullOrEmpty(listComp.DefaultItem) == false)
+                        {
+                            outputList.Add(GetComponentFromUiUri(listComp.DefaultItem));
+                        }
+                    }
                 }
+
             }
 
             //开始处理输出
-            var classTemplate = Resources.Load<TextAsset>("Component.template");
+            var classTemplate = (TextAsset)EditorGUIUtility.Load("FairyAnalyzer/Component.template.txt");
             Debug.Log(classTemplate.text);
             var pkgKeys = dealed.Keys.ToList();
             var pkgStep = 1f / pkgKeys.Count;
@@ -136,21 +146,16 @@ namespace FairyAnalyzer.Package
                 var pkgKey = pkgKeys[k];
 
                 var package = Packages[pkgKey];
-                EditorUtility.DisplayProgressBar("导出...", package.PackageDescription.Publish.Name, k * pkgStep);
+                EditorUtility.DisplayProgressBar("导出...", package.FolderName, k * pkgStep);
 
-                var packageName = package.PackageDescription.Publish.Name;
-                var fairyPackageName = packageName;
-                if (string.IsNullOrEmpty(Publish.codeGeneration.packageName) == false)
-                {
-                    packageName = string.Format("{0}.{1}", Publish.codeGeneration.packageName, packageName);
-                }
-
-                var pkgOutputPath = string.Format("{0}/{1}", outputPath, package.PackageDescription.Publish.Name);
+                var pkgOutputPath = string.Format("{0}/{1}", outputPath, package.FolderName);
                 if (Directory.Exists(pkgOutputPath))
                 {
                     Directory.Delete(pkgOutputPath, true);
                 }
                 Directory.CreateDirectory(pkgOutputPath);
+
+                var bindContent = new StringBuilder();
 
                 var compKeys = dealed[pkgKey].Keys.ToList();
                 for (var cIndex = 0; cIndex < compKeys.Count; cIndex++)
@@ -160,7 +165,7 @@ namespace FairyAnalyzer.Package
                     var fairyComponentName = comp.ResoureInfo.Name.Replace(".xml", "");
 
                     EditorUtility.DisplayProgressBar("导出...",
-                        string.Format("{0}/{1}", package.PackageDescription.Publish.Name, fairyComponentName), (k * pkgStep) + (cIndex * 1f / compKeys.Count) * pkgStep);
+                        string.Format("{0}/{1}", package.FolderName, fairyComponentName), (k * pkgStep) + (cIndex * 1f / compKeys.Count) * pkgStep);
 
 
                     string className = GetClassName(comp);
@@ -176,74 +181,12 @@ namespace FairyAnalyzer.Package
 
                     var uiPath = string.Format("ui://{0}{1}", pkgKey, compKey);
 
-                    var createInstance = string.Format("{3,12}return ({0})UIPackage.CreateObject(\"{1}\", \"{2}\");", className, fairyPackageName, fairyComponentName, " ");
+                    var createInstance = string.Format("{3,12}return ({0})UIPackage.CreateObject(\"{1}\", \"{2}\");", className, GetPackageName(package), fairyComponentName, " ");
 
                     var variable = new StringBuilder();
                     var content = new StringBuilder();
 
-                    #region Controller处理
-                    var controllerTemplate = Resources.Load<TextAsset>("Controller.template").text;
-                    var controllerTemplateParts = controllerTemplate.Split(new[] { "-----" }, StringSplitOptions.None);
-
-                    var controllerTemplateHeader = controllerTemplateParts[0];
-
-                    controllerTemplateHeader = controllerTemplateHeader.Replace("{packageName}", packageName);
-                    controllerTemplateHeader = controllerTemplateHeader.Replace("{className}", className);
-
-                    var controllerTemplateFooter = controllerTemplateParts[2];
-                    var controllerTemplateBody = new StringBuilder();
-
-                    for (var i = 0; i < comp.ComponentDescription.Controllers.Count; i++)
-                    {
-                        var controllerDef = controllerTemplateParts[1];
-                        var con = comp.ComponentDescription.Controllers[i];
-
-                        var memberName = string.Format("{0}{1}", Publish.codeGeneration.memberNamePrefix, con.Name);
-
-                        var controllerIndexMember = new StringBuilder();
-                        for (var j = 0; j < con.Pages.Count; j++)
-                        {
-                            var stateName = con.Pages[j];
-                            if (string.IsNullOrEmpty(stateName))
-                            {
-                                stateName = string.Format("_{0}", j);
-                            }
-
-                            controllerIndexMember.AppendLine(string.Format("{3,16}{0}{1} = {2},", memberName, stateName, j, ""));
-                        }
-
-
-                        controllerDef = controllerDef.Replace("{controllerName}", con.Name);
-                        controllerDef = controllerDef.Replace("{controllerIndexMember}", controllerIndexMember.ToString());
-                        controllerTemplateBody.AppendLine(controllerDef);
-
-
-                        variable.AppendLine(string.Format("{2,8}public {0}Controller {1};", con.Name, memberName, ""));
-
-                        for (var j = 0; j < con.Pages.Count; j++)
-                        {
-                            var stateName = con.Pages[j];
-                            if (string.IsNullOrEmpty(stateName))
-                            {
-                                stateName = string.Format("{0}", j);
-                            }
-
-                            variable.AppendLine(string.Format("{3,8}public const int {0}_{1} = {2};", memberName, stateName, j, ""));
-                        }
-
-                        variable.AppendLine("");
-
-                        content.AppendLine(string.Format("{3,12}{0} = ({1}Controller)this.GetControllerAt({2});", memberName, con.Name, i, ""));
-                    }
-
-                    var controllerBody = controllerTemplateBody.ToString();
-                    if (string.IsNullOrEmpty(controllerBody) == false)
-                    {
-                        controllerBody = string.Format("{0}{1}{2}", controllerTemplateHeader, controllerBody, controllerTemplateFooter);
-                        File.WriteAllText(filePath.Replace(".cs", "Controller.cs"), controllerBody);
-                    }
-                    #endregion
-
+                    GenerateController(package, comp, filePath, variable, content);
 
                     var compIndex = 0;
                     for (var i = 0; i < comp.ComponentDescription.DisplayList.Count; i++)
@@ -254,24 +197,14 @@ namespace FairyAnalyzer.Package
                         if (dispComp is CustomComponent)
                         {
                             var c = (CustomComponent)dispComp;
-                            string refPkgName = string.Empty;
-                            var pkgId = c.Pkg;
-                            if (string.IsNullOrEmpty(pkgId))
+                            if (string.IsNullOrEmpty(c.Pkg))
                             {
-                                pkgId = pkgKey;
+                                compType = GetClassName(Components[package.PackageID][c.Src]);
                             }
                             else //跨包引用加包名
                             {
-                                refPkgName = Packages[pkgId].PackageDescription.Publish.Name;
-                                if (string.IsNullOrEmpty(Publish.codeGeneration.packageName) == false)
-                                {
-                                    refPkgName = string.Format("{0}.{1}", Publish.codeGeneration.packageName,
-                                        refPkgName);
-                                }
-
-                                refPkgName = string.Format("{0}.", refPkgName);
+                                compType = GetClassFullName(Components[c.Pkg][c.Src]);
                             }
-                            compType = string.Format("{0}{1}", refPkgName, GetClassName(Components[pkgId][c.Src]));
                         }
                         else if (dispComp is Text)
                         {
@@ -293,6 +226,8 @@ namespace FairyAnalyzer.Package
                             {
                                 continue;
                             }
+
+                            compType = "GGroup";
                         }
                         else
                         {
@@ -319,18 +254,75 @@ namespace FairyAnalyzer.Package
                         content.AppendLine(string.Format("{3,12}{0}{1} = this.GetTransitionAt({2});", Publish.codeGeneration.memberNamePrefix, tran.Name, i, ""));
                     }
 
-                    str = str.Replace("{packageName}", packageName);
+                    str = str.Replace("{packageName}", GetPackageFullName(package));
                     str = str.Replace("{className}", className);
                     str = str.Replace("{componentName}", componentName);
                     str = str.Replace("{uiPath}", uiPath);
                     str = str.Replace("{createInstance}", createInstance);
                     str = str.Replace("{variable}", variable.ToString());
                     str = str.Replace("{content}", content.ToString());
-
+                    bindContent.AppendLine(string.Format(
+                        "{1,12}UIObjectFactory.SetPackageItemExtension({0}.URL, () => (GComponent)Activator.CreateInstance(typeof({0})));",
+                        className, ""));
                     File.WriteAllText(filePath, str);
                 }
+
+                var bindText = ((TextAsset)EditorGUIUtility.Load("FairyAnalyzer/Binder.template.txt")).text;
+                bindText = bindText.Replace("{packageName}", GetPackageFullName(package));
+                bindText = bindText.Replace("{className}", string.Format("{0}Binder", GetPackageName(package)));
+                bindText = bindText.Replace("{bindContent}", bindContent.ToString());
+                File.WriteAllText(string.Format("{0}/{1}Binder.cs", pkgOutputPath, GetPackageName(package)), bindText);
             }
             EditorUtility.ClearProgressBar();
+        }
+
+        private void GenerateController(FairyPackage package, FairyComponent comp, string filePath, StringBuilder variable, StringBuilder content)
+        {
+            #region Controller处理
+            var controllerTemplate = ((TextAsset)EditorGUIUtility.Load("FairyAnalyzer/Controller.template.txt")).text;
+            var controllerTemplateParts = controllerTemplate.Split(new[] { "-----" }, StringSplitOptions.None);
+
+            var controllerTemplateHeader = controllerTemplateParts[0];
+
+            controllerTemplateHeader = controllerTemplateHeader.Replace("{packageName}", GetPackageFullName(package));
+            controllerTemplateHeader = controllerTemplateHeader.Replace("{className}", GetClassName(comp));
+
+            var controllerTemplateFooter = controllerTemplateParts[2];
+            var controllerTemplateBody = new StringBuilder();
+
+            for (var i = 0; i < comp.ComponentDescription.Controllers.Count; i++)
+            {
+                var controllerDef = controllerTemplateParts[1];
+                var con = comp.ComponentDescription.Controllers[i];
+
+                var memberName = string.Format("{0}{1}", Publish.codeGeneration.memberNamePrefix, con.Name);
+
+                var controllerIndexMember = new StringBuilder();
+                for (var j = 0; j < con.Pages.Count; j++)
+                {
+                    var stateName = con.Pages[j];
+                    stateName = string.Format("{0}_{1}", stateName, j);
+
+                    controllerIndexMember.AppendLine(string.Format("{3,16}{0}{1} = {2},", memberName, stateName, j, ""));
+                }
+
+
+                controllerDef = controllerDef.Replace("{controllerName}", con.Name);
+                controllerDef = controllerDef.Replace("{controllerIndexMember}", controllerIndexMember.ToString());
+                controllerTemplateBody.AppendLine(controllerDef);
+
+                variable.AppendLine(string.Format("{2,8}public {0}Controller {1};", con.Name, memberName, ""));
+
+                content.AppendLine(string.Format("{3,12}{0} = ({1}Controller)this.GetControllerAt({2});", memberName, con.Name, i, ""));
+            }
+
+            var controllerBody = controllerTemplateBody.ToString();
+            if (string.IsNullOrEmpty(controllerBody) == false)
+            {
+                controllerBody = string.Format("{0}{1}{2}", controllerTemplateHeader, controllerBody, controllerTemplateFooter);
+                File.WriteAllText(filePath.Replace(".cs", "Controller.cs"), controllerBody);
+            }
+            #endregion
         }
 
         private string GetClassName(FairyComponent comp)
@@ -339,6 +331,35 @@ namespace FairyAnalyzer.Package
             className = className.Replace("&", "_");
             className = string.Format("{0}{1}", Publish.codeGeneration.classNamePrefix, className);
             return className;
+        }
+
+        private string GetClassFullName(FairyComponent comp)
+        {
+            var refPkgName = GetPackageFullName(Packages[comp.PackageID]);
+            refPkgName = string.Format("{0}.", refPkgName);
+            var compType = string.Format("{0}{1}", refPkgName, GetClassName(comp));
+            return compType;
+        }
+
+        public string GetPackageName(FairyPackage package)
+        {
+            return package.FolderName;
+        }
+
+        public string GetPackageFullName(FairyPackage package)
+        {
+            var fullName = GetPackageName(package);
+            if (string.IsNullOrEmpty(Publish.codeGeneration.packageName) == false)
+            {
+                fullName = string.Format("{0}.{1}", Publish.codeGeneration.packageName, fullName);
+            }
+
+            return fullName;
+        }
+
+        public FairyComponent GetComponentFromUiUri(string uri)
+        {
+            return Components[uri.Substring(5, 8)][uri.Substring(13, 6)];
         }
 
         private static bool IsDefaultName(string memberName)
