@@ -67,86 +67,15 @@ namespace FairyAnalyzer.Package
             }
         }
 
-        public void Output(string outputPath)
+        public List<string> Output(string outputPath)
         {
-            var outputList = new List<FairyComponent>();
-            var dealed = new Dictionary<string, Dictionary<string, FairyComponent>>();
-            foreach (var pkgKey in Components.Keys)
-            {
-                Debug.Log(string.Format("[Package]********************************{0}", Packages[pkgKey].FolderName));
-                foreach (var compKey in Components[pkgKey].Keys)
-                {
-                    var comp = Components[pkgKey][compKey];
-                    if (comp.ResoureInfo.Exported)
-                    {
-                        outputList.Add(comp);
-                        Debug.Log(string.Format("[Component]{0}", comp.ResoureInfo.Name));
-                    }
-                }
-            }
+            var processDict = BuildOutputList();
 
-            //TODO 可以融合进下一步
-            for (var currentIndex = 0; currentIndex < outputList.Count; currentIndex++)
-            {
-                var currComp = outputList[currentIndex];
-                if (dealed.ContainsKey(currComp.PackageID) && dealed[currComp.PackageID].ContainsKey(currComp.ComponentID))
-                {
-                    continue;
-                }
-
-                if (dealed.ContainsKey(currComp.PackageID) == false)
-                {
-                    dealed[currComp.PackageID] = new Dictionary<string, FairyComponent>();
-                }
-
-                dealed[currComp.PackageID][currComp.ComponentID] = currComp;
-
-                foreach (var componentType in currComp.ComponentDescription.DisplayList)
-                {
-                    if (componentType is CustomComponent)
-                    {
-                        var customComponent = (CustomComponent)componentType;
-                        if (IsDefaultName(customComponent.Name))
-                        {
-                            if (Publish.codeGeneration.ignoreNoname)
-                            {
-                                continue;
-                            }
-                        }
-
-                        var pkgId = currComp.PackageID;
-                        if (string.IsNullOrEmpty(customComponent.Pkg) == false)
-                        {
-                            Debug.LogWarning(string.Format("跨包: {0}-{1}引用{2}-{3}", currComp.PackageID, currComp.ComponentID, customComponent.Pkg, customComponent.Src));
-                            pkgId = customComponent.Pkg;
-                        }
-
-                        outputList.Add(Components[pkgId][customComponent.Src]);
-                    }
-                    else if (componentType is List)
-                    {
-                        var listComp = (List)componentType;
-                        if (string.IsNullOrEmpty(listComp.DefaultItem) == false)
-                        {
-                            outputList.Add(GetComponentFromUiUri(listComp.DefaultItem));
-                        }
-
-                        foreach (var listCompItem in listComp.items)
-                        {
-                            if (string.IsNullOrEmpty(listCompItem.Url) == false)
-                            {
-                                outputList.Add(GetComponentFromUiUri(listCompItem.Url));
-                            }
-                        }
-                    }
-                }
-
-            }
+            var filePathes = new List<string>();
 
             //开始处理输出
             var classTemplate = (TextAsset)EditorGUIUtility.Load("FairyAnalyzer/Component.template.txt");
-            Debug.Log(classTemplate.text);
-            var pkgKeys = dealed.Keys.ToList();
+            var pkgKeys = processDict.Keys.ToList();
             var pkgStep = 1f / pkgKeys.Count;
 
             for (var k = 0; k < pkgKeys.Count; k++)
@@ -165,11 +94,11 @@ namespace FairyAnalyzer.Package
 
                 var bindContent = new StringBuilder();
 
-                var compKeys = dealed[pkgKey].Keys.ToList();
+                var compKeys = processDict[pkgKey].Keys.ToList();
                 for (var cIndex = 0; cIndex < compKeys.Count; cIndex++)
                 {
                     var compKey = compKeys[cIndex];
-                    var comp = dealed[pkgKey][compKey];
+                    var comp = processDict[pkgKey][compKey];
                     var fairyComponentName = comp.ResoureInfo.Name.Replace(".xml", "");
 
                     EditorUtility.DisplayProgressBar("导出...",
@@ -194,7 +123,11 @@ namespace FairyAnalyzer.Package
                     var variable = new StringBuilder();
                     var content = new StringBuilder();
 
-                    GenerateController(package, comp, filePath, variable, content);
+                    var controllerPath = GenerateController(package, comp, filePath, variable, content);
+                    if (string.IsNullOrEmpty(controllerPath) == false)
+                    {
+                        filePathes.Add(controllerPath);
+                    }
 
                     var compIndex = 0;
                     for (var i = 0; i < comp.ComponentDescription.DisplayList.Count; i++)
@@ -273,20 +206,110 @@ namespace FairyAnalyzer.Package
                         "{1,12}UIObjectFactory.SetPackageItemExtension({0}.URL, () => (GComponent)Activator.CreateInstance(typeof({0})));",
                         className, ""));
                     File.WriteAllText(filePath, str);
+                    filePathes.Add(filePath);
                 }
 
                 var bindText = ((TextAsset)EditorGUIUtility.Load("FairyAnalyzer/Binder.template.txt")).text;
                 bindText = bindText.Replace("{packageName}", GetPackageFullName(package));
                 bindText = bindText.Replace("{className}", string.Format("{0}Binder", GetPackageName(package)));
                 bindText = bindText.Replace("{bindContent}", bindContent.ToString());
-                File.WriteAllText(string.Format("{0}/{1}Binder.cs", pkgOutputPath, GetPackageName(package)), bindText);
+                var outPath = string.Format("{0}/{1}Binder.cs", pkgOutputPath, GetPackageName(package));
+                File.WriteAllText(outPath, bindText);
+                filePathes.Add(outPath);
             }
             EditorUtility.ClearProgressBar();
+            return filePathes;
         }
 
-        private void GenerateController(FairyPackage package, FairyComponent comp, string filePath, StringBuilder variable, StringBuilder content)
+        private Dictionary<string, Dictionary<string, FairyComponent>> BuildOutputList()
         {
-            #region Controller处理
+            var outputList = new List<FairyComponent>();
+            var dealed = new Dictionary<string, Dictionary<string, FairyComponent>>();
+            foreach (var pkgKey in Components.Keys)
+            {
+                Debug.Log(string.Format("[Package]********************************{0}", Packages[pkgKey].FolderName));
+                foreach (var compKey in Components[pkgKey].Keys)
+                {
+                    var comp = Components[pkgKey][compKey];
+                    if (comp.ResoureInfo.Exported)
+                    {
+                        outputList.Add(comp);
+                        Debug.Log(string.Format("[Component]{0}", comp.ResoureInfo.Name));
+                    }
+                }
+            }
+
+            //TODO 可以融合进下一步
+            for (var currentIndex = 0; currentIndex < outputList.Count; currentIndex++)
+            {
+                var currComp = outputList[currentIndex];
+                if (dealed.ContainsKey(currComp.PackageID) && dealed[currComp.PackageID].ContainsKey(currComp.ComponentID))
+                {
+                    continue;
+                }
+
+                if (dealed.ContainsKey(currComp.PackageID) == false)
+                {
+                    dealed[currComp.PackageID] = new Dictionary<string, FairyComponent>();
+                }
+
+                dealed[currComp.PackageID][currComp.ComponentID] = currComp;
+
+                foreach (var componentType in currComp.ComponentDescription.DisplayList)
+                {
+                    if (componentType is CustomComponent)
+                    {
+                        var customComponent = (CustomComponent)componentType;
+                        if (IsDefaultName(customComponent.Name))
+                        {
+                            if (Publish.codeGeneration.ignoreNoname)
+                            {
+                                continue;
+                            }
+                        }
+
+                        var pkgId = currComp.PackageID;
+                        if (string.IsNullOrEmpty(customComponent.Pkg) == false)
+                        {
+                            Debug.LogWarning(string.Format("跨包: {0}-{1}引用{2}-{3}", currComp.PackageID, currComp.ComponentID, customComponent.Pkg, customComponent.Src));
+                            pkgId = customComponent.Pkg;
+                        }
+
+                        outputList.Add(Components[pkgId][customComponent.Src]);
+                    }
+                    else if (componentType is List)
+                    {
+                        var listComp = (List)componentType;
+                        if (string.IsNullOrEmpty(listComp.DefaultItem) == false)
+                        {
+                            outputList.Add(GetComponentFromUiUri(listComp.DefaultItem));
+                        }
+
+                        foreach (var listCompItem in listComp.items)
+                        {
+                            if (string.IsNullOrEmpty(listCompItem.Url) == false)
+                            {
+                                outputList.Add(GetComponentFromUiUri(listCompItem.Url));
+                            }
+                        }
+                    }
+                }
+            }
+
+            return dealed;
+        }
+
+        /// <summary>
+        /// 生成Controller文件
+        /// </summary>
+        /// <param name="package"></param>
+        /// <param name="comp"></param>
+        /// <param name="filePath"></param>
+        /// <param name="variable"></param>
+        /// <param name="content"></param>
+        /// <returns></returns>
+        private string GenerateController(FairyPackage package, FairyComponent comp, string filePath, StringBuilder variable, StringBuilder content)
+        {
             var controllerTemplate = ((TextAsset)EditorGUIUtility.Load("FairyAnalyzer/Controller.template.txt")).text;
             var controllerTemplateParts = controllerTemplate.Split(new[] { "-----" }, StringSplitOptions.None);
 
@@ -320,7 +343,6 @@ namespace FairyAnalyzer.Package
                 controllerTemplateBody.AppendLine(controllerDef);
 
                 variable.AppendLine(string.Format("{2,8}public {0}Controller {1};", con.Name, memberName, ""));
-
                 content.AppendLine(string.Format("{3,12}{0} = ({1}Controller)this.GetControllerAt({2});", memberName, con.Name, i, ""));
             }
 
@@ -328,9 +350,12 @@ namespace FairyAnalyzer.Package
             if (string.IsNullOrEmpty(controllerBody) == false)
             {
                 controllerBody = string.Format("{0}{1}{2}", controllerTemplateHeader, controllerBody, controllerTemplateFooter);
-                File.WriteAllText(filePath.Replace(".cs", "Controller.cs"), controllerBody);
+                var outPath = filePath.Replace(".cs", "Controller.cs");
+                File.WriteAllText(outPath, controllerBody);
+                return outPath;
             }
-            #endregion
+
+            return string.Empty;
         }
 
         private string GetClassName(FairyComponent comp)
