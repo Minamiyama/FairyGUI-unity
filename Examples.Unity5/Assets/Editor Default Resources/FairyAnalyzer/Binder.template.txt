@@ -3,11 +3,32 @@ using FairyGUI;
 
 namespace {packageName}
 {
-	public class {className}
-	{
-		public static void BindAll()
-		{
+    public class ComponentController : Controller
+    {
+        private Controller _controller;
+
+        public ComponentController(Controller controller)
+        {
+            _controller = controller;
+        }
+
+        public new int selectedIndex
+        {
+            get { return _controller.selectedIndex; }
+            set { _controller.selectedIndex = value; }
+        }
+
+        public new void SetSelectedIndex(int index)
+        {
+            _controller.SetSelectedIndex(index);
+        }
+    }
+	
+    public class {className}
+    {
+        public static void BindAll()
+        {
 {bindContent}
-		}
-	}
+        }
+    }
 }

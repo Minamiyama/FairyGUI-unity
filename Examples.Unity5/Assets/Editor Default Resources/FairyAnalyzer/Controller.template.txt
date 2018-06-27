@@ -6,7 +6,7 @@ namespace {packageName}
     public partial class {className}
     {
 -----
-		public class {controllerName}Controller : Controller
+		public class {controllerName}Controller : ComponentController
 		{
 			public enum Index
 			{
@@ -19,6 +19,10 @@ namespace {packageName}
                 set { base.selectedIndex = (int)value; }
             }
 
+			public {controllerName}Controller(Controller controller) : base(controller)
+		    {
+		    }
+			
             public void SetSelectedIndex(Index index)
             {
                 base.SetSelectedIndex((int)index);

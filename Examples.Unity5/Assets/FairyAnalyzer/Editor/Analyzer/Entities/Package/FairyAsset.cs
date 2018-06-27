@@ -343,7 +343,8 @@ namespace FairyAnalyzer.Package
                 controllerTemplateBody.AppendLine(controllerDef);
 
                 variable.AppendLine(string.Format("{2,8}public {0}Controller {1};", con.Name, memberName, ""));
-                content.AppendLine(string.Format("{3,12}{0} = ({1}Controller)this.GetControllerAt({2});", memberName, con.Name, i, ""));
+                content.AppendLine(string.Format("{3,12}{0} = new {1}Controller(this.GetControllerAt({2}));",
+                    memberName, con.Name, i, ""));
             }
 
             var controllerBody = controllerTemplateBody.ToString();
